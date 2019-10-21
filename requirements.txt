@@ -1,0 +1,4 @@
+Flask==1.1.1
+flask-restful
+requests==2.22.0
+Flask-Caching==1.7.2
