@@ -1,12 +1,14 @@
-from urllib.parse import urlencode, quote_plus
+import os
+import time
 from pprint import pprint
+from urllib.parse import urlencode, quote_plus
+
 import requests
 from flask import Flask, request, jsonify
 from flask_caching import Cache
-import time
 
-UNIVIS_ROOMS_API = "http://0.0.0.0:5000/api/v1/rooms/"
-UNIVIS_ALLOCATION_API = "http://0.0.0.0:5000/api/v1/allocations/"
+UNIVIS_ROOMS_API = os.environ.get("UNIVIS_ROOM_API")
+UNIVIS_ALLOCATION_API = os.environ.get("UNIVIS_ALLOCATION_API")
 API_V1_ROOT = "/api/v1/"
 
 app = Flask(__name__)
