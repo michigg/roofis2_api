@@ -14,8 +14,11 @@ API_V1_ROOT = "/api/v1/"
 app = Flask(__name__)
 cache = Cache(app, config={'CACHE_TYPE': 'simple'})
 
-BUILDING_KEY_MAP = {"Erba": ['WE5'], "Feki": ["F21", "FG1", "FG2", "FMA"], "Markushaus": ["M3N", "M3", "MG1", "MG2"],
-                    "Innenstadt": ["U2", "U5", "U7"]}
+BUILDING_KEY_MAP = {"Erba": {'building_keys': ['WE5'], 'geojson_file': ''},
+                    "Feki": {'building_keys': ["F21", "FG1", "FG2", "FMA"], 'geojson_file': ''},
+                    "Markushaus": {'building_keys': ["M3N", "M3", "MG1", "MG2"], 'geojson_file': ''},
+                    "Innenstadt": {'building_keys': ["U2", "U5", "U7"], 'geojson_file': ''}
+                    }
 
 EXCLUDED_ORGNAMES = ["Fachvertretung für Didaktik der Kunst", "Lehrstuhl für Musikpädagogik und Musikdidaktik",
                      "Bamberg Graduate School of Social Sciences (BAGSS)", "Institut für Psychologie"]
@@ -26,13 +29,8 @@ EXCLUDED_ROOM_NAMES = ["Tower Lounge WIAI", "PC-Labor", "PC-Labor 1", "PC-Labor 
                        "Kartensammlung", "Sekretariat", "Büro Sprachlernstudio", "Dozentenzimmer", "Labor",
                        "Multimedialabor", "Sporthalle", "Multimedialabor",
                        "Lehrstuhl für Englische Literaturwissenschaft/Dienstzimmer", "Besprechungsraum - IADK",
-                       "Lernwerkstatt"]
-
-
-def make_cache_key(*args, **kwargs):
-    path = request.path
-    args = str(hash(frozenset(request.args.items())))
-    return (path + args)
+                       "Lernwerkstatt", "Sitzungszimmer Fakultät GuK", "Lehrredaktion", "Arbeits-, und Materialraum",
+                       "Sitzungszimmer Fakultät GuK"]
 
 
 @app.route(f'{API_V1_ROOT}/', methods=['GET'])
@@ -47,9 +45,8 @@ def roofis():
         allocations_url = _get_allocation_url(start_date=start_date, start_time=start_time)
         if not location:
             rooms_url = _get_rooms_url(building_keys=[building_key] if building_key else None)
-            print(rooms_url)
         elif location in BUILDING_KEY_MAP:
-            rooms_url = _get_rooms_url(building_keys=BUILDING_KEY_MAP[location])
+            rooms_url = _get_rooms_url(building_keys=BUILDING_KEY_MAP[location]['building_keys'])
         else:
             return jsonify(status_code=400)
 
@@ -58,10 +55,12 @@ def roofis():
 
         if r_allocations.status_code == 200 and r_rooms.status_code == 200:
             allocations = r_allocations.json()
-            rooms = r_rooms.json()
 
+            rooms = r_rooms.json()
             allocated_rooms = get_allocated_rooms(allocations)
+
             rooms = [add_allocations(room, allocated_rooms) for room in rooms]
+
             free_rooms = [add_allocations(room, allocated_rooms) for room in rooms if
                           not is_currently_allocated(room, start_time) and is_excluded(room, min_size)]
             for room in free_rooms:
@@ -84,10 +83,7 @@ def get_allocated_rooms(allocations):
 
 
 def add_allocations(room, allocations):
-    if room['univis_key'] in allocations:
-        room['allocations'] = allocations[room['univis_key']]['allocations']
-    else:
-        room['allocations'] = []
+    room['allocations'] = allocations[room['univis_key']]['allocations'] if room['univis_key'] in allocations else []
     return room
 
 
@@ -113,10 +109,9 @@ def add_next_allocation(room, start_time):
     for allocation in room['allocations']:
         start_time = time.strptime(allocation['start_time'], "%H:%S")
         if requested_start_time.tm_hour < start_time.tm_hour:
-            pprint(f'{start_time.tm_hour} > {requested_start_time.tm_hour}')
             if 'next_allocation' in room:
                 current_next_allocation = time.strptime(room['next_allocation'], "%H:%S")
-                if current_next_allocation.tm_hour < start_time.tm_hour:
+                if current_next_allocation.tm_hour > start_time.tm_hour:
                     room['next_allocation'] = time.strftime("%H:%S", start_time)
             else:
                 room['next_allocation'] = time.strftime("%H:%S", start_time)
