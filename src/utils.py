@@ -1,7 +1,7 @@
 import time
 from urllib.parse import urlencode, quote_plus
 
-from app import EXCLUDED_ORGNAMES, EXCLUDED_ROOM_NAMES, UNIVIS_ALLOCATION_API, UNIVIS_ROOMS_API
+from config import EXCLUDED_ORGNAMES, EXCLUDED_ROOM_NAMES, UNIVIS_ROOMS_API, UNIVIS_ALLOCATION_API
 
 
 def get_allocated_rooms(allocations):

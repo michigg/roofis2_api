@@ -5,4 +5,4 @@ services:
     image: roofis2_api:0.1
     build: .
     ports:
-      - 8080:5000
+      - 9999:80
