@@ -65,6 +65,8 @@ def roofis():
                           not is_currently_allocated(room, start_time) and is_excluded(room, min_size)]
             for room in free_rooms:
                 add_next_allocation(room, start_time)
+
+            free_rooms.sort(key=lambda room: f'{room["building_key"]}/{room["floor"]:02}.{room["number"]:03}')
             return jsonify(free_rooms)
     return jsonify(status_code=400)
 
