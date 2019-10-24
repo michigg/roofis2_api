@@ -33,8 +33,13 @@ def is_currently_allocated(room, start_time):
     requested_start_time = time.strptime(start_time, "%H:%S")
     for allocation in room['allocations']:
         start_time = time.strptime(allocation['start_time'], "%H:%S")
+        if allocation['end_time'] == "24:00":
+            allocation['end_time'] = '00:00'
         end_time = time.strptime(allocation['end_time'], "%H:%S")
-        if start_time.tm_hour <= requested_start_time.tm_hour < end_time.tm_hour:
+        end_time_val = end_time.tm_hour
+        if end_time.tm_hour == 0:
+            end_time_val = 24
+        if start_time.tm_hour <= requested_start_time.tm_hour < end_time_val:
             return True
     return False
 
