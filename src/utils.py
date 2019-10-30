@@ -1,4 +1,5 @@
 import time
+from pprint import pprint
 from urllib.parse import urlencode, quote_plus
 
 from config import EXCLUDED_ORGNAMES, EXCLUDED_ROOM_NAMES, UNIVIS_ROOMS_API, UNIVIS_ALLOCATION_API
@@ -7,13 +8,14 @@ from config import EXCLUDED_ORGNAMES, EXCLUDED_ROOM_NAMES, UNIVIS_ROOMS_API, UNI
 def get_allocated_rooms(allocations):
     allocated_rooms = {}
     for allocation in allocations:
-        for room in allocation['rooms']:
-            if room['univis_key'] not in allocated_rooms or 'allocations' not in allocated_rooms[
-                room['univis_key']]:
-                allocated_rooms[room['univis_key']] = {}
-                allocated_rooms[room['univis_key']]['allocations'] = [allocation]
-            else:
-                allocated_rooms[room['univis_key']]['allocations'].append(allocation)
+        if allocation['rooms']:
+            for room in allocation['rooms']:
+                if room['univis_key'] not in allocated_rooms or 'allocations' not in allocated_rooms[
+                    room['univis_key']]:
+                    allocated_rooms[room['univis_key']] = {}
+                    allocated_rooms[room['univis_key']]['allocations'] = [allocation]
+                else:
+                    allocated_rooms[room['univis_key']]['allocations'].append(allocation)
     return allocated_rooms
 
 
@@ -77,4 +79,5 @@ def _get_rooms_url(building_keys=None, faculty=None):
         params['department'] = faculty
     if building_keys:
         params['building_keys'] = building_keys
+    print(f'{UNIVIS_ROOMS_API}?{urlencode(params, True, quote_via=quote_plus)}')
     return f'{UNIVIS_ROOMS_API}?{urlencode(params, True, quote_via=quote_plus)}'
