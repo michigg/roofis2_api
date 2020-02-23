@@ -21,6 +21,7 @@ def get_allocated_rooms(allocations):
 
 def add_allocations(room, allocations):
     room['allocations'] = allocations[room['univis_key']]['allocations'] if room['univis_key'] in allocations else []
+    room['short'] = "%s/%02d.%03d" % (room["building_key"],room["floor"], room["number"])
     return room
 
 

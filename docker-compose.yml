@@ -6,3 +6,4 @@ services:
     build: .
     ports:
       - 9999:80
+    env_file: roofis.env
