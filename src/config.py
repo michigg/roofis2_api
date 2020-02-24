@@ -18,4 +18,5 @@ EXCLUDED_ROOM_NAMES = ["Tower Lounge WIAI", "PC-Labor", "PC-Labor 1", "PC-Labor 
                        "Sitzungszimmer Fakultät GuK"]
 UNIVIS_ROOMS_API = os.environ.get("UNIVIS_ROOM_API")
 UNIVIS_ALLOCATION_API = os.environ.get("UNIVIS_ALLOCATION_API")
+UNI_INFO_API = os.environ.get("UNI_INFO_API", None)
 API_V1_ROOT = "/api/v1/"

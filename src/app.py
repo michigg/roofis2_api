@@ -1,9 +1,11 @@
+import datetime
+
 import requests
 from flask import Flask, jsonify
 from flask_restplus import Api, Resource, reqparse, inputs
 
 import utils
-from config import BUILDING_KEY_MAP, API_V1_ROOT
+from config import BUILDING_KEY_MAP, API_V1_ROOT, UNI_INFO_API
 from flask_cors import CORS
 
 app = Flask(__name__)
@@ -60,6 +62,9 @@ class Roofis(Resource):
 
                 rooms = [utils.add_allocations(room, allocated_rooms) for room in rooms]
 
+                # EXTRA API
+                self.add_exam_allocations(rooms)
+
                 free_rooms = [utils.add_allocations(room, allocated_rooms) for room in rooms if
                               not utils.is_currently_allocated(room, start_time) and utils.is_excluded(room, min_size)]
                 for room in free_rooms:
@@ -69,8 +74,45 @@ class Roofis(Resource):
                 return jsonify(free_rooms)
         return jsonify(status_code=400)
 
+    def add_exam_allocations(self, rooms):
+        if UNI_INFO_API:
+            response = requests.get(f'{UNI_INFO_API}exams')
+            if response.status_code == 200:
+                today = datetime.datetime.now().date()
+                exam_rooms = [exam_appointment for exam_appointment in response.json() if
+                              datetime.datetime.strptime(exam_appointment["date"], "%Y-%m-%d") == today and
+                              exam_appointment["room"]["building_key"]]
+                exam_room_keys = [
+                    f'{exam_appointment["room"]["building_key"]}/{exam_appointment["room"]["floor"]:02}.{exam_appointment["room"]["number"]:03}'
+                    for exam_appointment in exam_rooms]
+                for room in rooms:
+                    room_short = f'{room["building_key"]}/{room["floor"]:02}.{room["number"]:03}'
+                    if room_short in exam_room_keys:
+                        self.add_rooms_exam_allocation(exam_rooms, room, room_short)
+
+    def add_rooms_exam_allocation(self, exam_rooms, room, room_short):
+        room_exam_allocation = [exam_room for exam_room in exam_rooms if
+                                f'{exam_room["room"]["building_key"]}/{exam_room["room"]["floor"]:02}.{exam_room["room"]["number"]:03}' == room_short]
+        for allocation in room_exam_allocation:
+            if allocation["time"] and allocation["minutes_duration"]:
+                start_time = datetime.datetime.strptime(allocation["time"], "%H:%M")
+                end_time = start_time + datetime.timedelta(
+                    minutes=int(allocation["minutes_duration"]))
+                room["allocations"].append(
+                    {"start_time": allocation["time"], "end_time": end_time.strftime("%H:%M")})
+
 
 @api.route(f'{API_V1_ROOT}locations/')
+class LocationList(Resource):
+    def get(self):
+        """
+        returns list of available locations
+        """
+        locations = [location for location in BUILDING_KEY_MAP]
+        return jsonify(locations)
+
+
+@api.route(f'{API_V1_ROOT}openings/')
 class LocationList(Resource):
     def get(self):
         """
