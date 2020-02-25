@@ -9,9 +9,9 @@ from config import BUILDING_KEY_MAP, API_V1_ROOT, UNI_INFO_API
 from flask_cors import CORS
 
 app = Flask(__name__)
-CORS(app, resources={r"/api/*": {"origins": "*"}})
 api = Api(app=app, doc='/docs', version='1.0', title='RooFiS2 API',
           description='Room Finder Service 2 API')
+cors = CORS(app, resources={r"/api/*": {"origins": "*"}})
 
 roofis_parser = reqparse.RequestParser()
 roofis_parser.add_argument('start_date', required=True,
